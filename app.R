@@ -13,72 +13,166 @@ source("R/utils_finance.R")
 
 ensure_data_dir("data")
 
+metric_card <- function(title, value, note, accent = "default") {
+  div(
+    class = paste("metric-card", paste0("metric-card-", accent)),
+    div(class = "metric-card-title", title),
+    div(class = "metric-card-value", value),
+    div(class = "metric-card-note", note)
+  )
+}
+
+section_header <- function(panel_label, title, subtitle = NULL) {
+  div(
+    class = "section-header",
+    div(class = "section-label", panel_label),
+    div(class = "section-heading", title),
+    if (!is.null(subtitle)) div(class = "section-subtitle", subtitle)
+  )
+}
+
+table_caption <- function(text) {
+  htmltools::tags$caption(
+    style = "caption-side: top; text-align: left;",
+    text
+  )
+}
+
 ui <- fluidPage(
-  titlePanel("STAN - STock ANalyser"),
   tags$head(
-    tags$style(HTML("
-      .section-box {
-        background: #f8f9fa;
-        border: 1px solid #d9dee3;
-        border-radius: 8px;
-        padding: 16px;
-        margin-bottom: 16px;
-      }
-      .section-title {
-        font-weight: 600;
-        margin-bottom: 10px;
-      }
-      .metric-value {
-        font-size: 1.3em;
-        font-weight: 600;
-        color: #0b3954;
-      }
-      .small-note {
-        color: #5c677d;
-        font-size: 0.92em;
-      }
-    "))
+    tags$title("STAN - STock ANalyser"),
+    tags$meta(name = "viewport", content = "width=device-width, initial-scale=1"),
+    tags$link(rel = "stylesheet", type = "text/css", href = "style.css")
   ),
-  sidebarLayout(
-    sidebarPanel(
-      h4("Panel 2 - Réglages"),
-      selectInput("ticker", "Ticker disponible", choices = NULL),
-      numericInput("start_year", "Année de début d'analyse", value = year(Sys.Date()) - 10, min = 1990, max = year(Sys.Date())),
-      hr(),
-      h4("Panel 5 - Gestion de données"),
-      actionButton("update_ticker", "Mettre à jour le ticker sélectionné", class = "btn-primary"),
-      tags$hr(),
-      textInput("new_yahoo_ticker", "Nouveau ticker Yahoo", placeholder = "Ex. AAPL ou BNP.PA"),
-      actionButton("add_yahoo_ticker", "Ajouter depuis Yahoo Finance"),
-      tags$hr(),
-      textInput("csv_ticker", "Nom du ticker pour le CSV", placeholder = "Optionnel"),
-      fileInput("csv_file", "Importer un fichier CSV", accept = c(".csv")),
-      actionButton("add_csv_ticker", "Ajouter depuis un CSV")
+  div(
+    class = "app-shell",
+    div(
+      class = "app-hero",
+      div(
+        class = "app-hero-text",
+        div(class = "app-kicker", "Master 2 MAS / STD • Projet Shiny en R"),
+        h1("STAN", class = "app-title"),
+        p(
+          class = "app-subtitle",
+          "Analyse de stocks, indicateurs financiers, régression log-linéaire et gestion de données locales."
+        )
+      )
     ),
-    mainPanel(
-      div(
-        class = "section-box",
-        div(class = "section-title", "Panel 1 - Indicateurs de base"),
-        uiOutput("basic_indicators")
+    sidebarLayout(
+      sidebarPanel(
+        width = 4,
+        class = "app-sidebar",
+        div(
+          class = "sidebar-card",
+          section_header(
+            "Panel 2",
+            "Réglages de l'analyse",
+            "Sélection du ticker local et de la période d'étude."
+          ),
+          div(
+            class = "control-group",
+            selectInput("ticker", "Ticker disponible", choices = NULL, width = "100%"),
+            numericInput(
+              "start_year",
+              "Année de début d'analyse",
+              value = year(Sys.Date()) - 10,
+              min = 1990,
+              max = year(Sys.Date()),
+              width = "100%"
+            )
+          )
+        ),
+        div(
+          class = "sidebar-card",
+          section_header(
+            "Panel 5",
+            "Gestion des données",
+            "Mise à jour depuis Yahoo Finance et import de fichiers CSV."
+          ),
+          div(
+            class = "control-subgroup",
+            div(class = "control-subtitle", "Ticker déjà présent"),
+            actionButton(
+              "update_ticker",
+              "Mettre à jour le ticker sélectionné",
+              class = "btn-stan btn-stan-primary"
+            )
+          ),
+          div(
+            class = "control-subgroup",
+            div(class = "control-subtitle", "Ajout depuis Yahoo Finance"),
+            textInput(
+              "new_yahoo_ticker",
+              "Nouveau ticker Yahoo",
+              placeholder = "Ex. AAPL, MSFT ou BNP.PA",
+              width = "100%"
+            ),
+            actionButton(
+              "add_yahoo_ticker",
+              "Ajouter depuis Yahoo Finance",
+              class = "btn-stan btn-stan-secondary"
+            )
+          ),
+          div(
+            class = "control-subgroup",
+            div(class = "control-subtitle", "Ajout depuis un fichier CSV"),
+            textInput(
+              "csv_ticker",
+              "Nom du ticker pour le CSV",
+              placeholder = "Optionnel : déduit du nom de fichier sinon",
+              width = "100%"
+            ),
+            fileInput("csv_file", "Importer un fichier CSV", accept = c(".csv"), width = "100%"),
+            actionButton(
+              "add_csv_ticker",
+              "Ajouter depuis un CSV",
+              class = "btn-stan btn-stan-neutral"
+            )
+          )
+        )
       ),
-      div(
-        class = "section-box",
-        div(class = "section-title", "Panel 3 - Performance / Régression"),
-        DTOutput("performance_table"),
-        br(),
-        DTOutput("regression_table")
-      ),
-      div(
-        class = "section-box",
-        div(class = "section-title", "Panel 4 - Graphique"),
-        plotOutput("price_plot", height = "520px")
-      ),
-      div(
-        class = "section-box",
-        div(class = "section-title", "Panel 5 - Gestion des données"),
-        verbatimTextOutput("data_message"),
-        br(),
-        DTOutput("available_tickers_table")
+      mainPanel(
+        width = 8,
+        class = "app-main",
+        div(
+          class = "content-card",
+          section_header(
+            "Panel 1",
+            "Indicateurs de base",
+            "Vue synthétique des mesures clés sur la période sélectionnée."
+          ),
+          uiOutput("analysis_context"),
+          uiOutput("basic_indicators")
+        ),
+        div(
+          class = "content-card",
+          section_header(
+            "Panel 3",
+            "Performance et régression",
+            "Performances multi-horizons et lecture de la tendance log-linéaire."
+          ),
+          div(class = "table-block", DTOutput("performance_table")),
+          div(class = "table-block", DTOutput("regression_table"))
+        ),
+        div(
+          class = "content-card",
+          section_header(
+            "Panel 4",
+            "Graphique",
+            "Prix observé, tendance théorique et bandes de dispersion autour de la régression."
+          ),
+          plotOutput("price_plot", height = "560px")
+        ),
+        div(
+          class = "content-card",
+          section_header(
+            "Panel 5",
+            "Base locale",
+            "Retour des opérations et liste des tickers actuellement disponibles."
+          ),
+          uiOutput("data_message"),
+          div(class = "table-block", DTOutput("available_tickers_table"))
+        )
       )
     )
   )
@@ -86,8 +180,16 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   data_dir <- "data"
-  data_message <- reactiveVal("Application prête. Sélectionnez un ticker ou ajoutez-en un nouveau.")
+  data_message <- reactiveVal(list(
+    type = "info",
+    title = "Application prête",
+    text = "Sélectionnez un ticker local ou ajoutez-en un nouveau depuis Yahoo Finance ou un fichier CSV."
+  ))
   refresh_counter <- reactiveVal(0)
+
+  set_data_message <- function(type = "info", title, text) {
+    data_message(list(type = type, title = title, text = text))
+  }
 
   refresh_tickers <- function(selected = NULL) {
     tickers <- list_local_tickers(data_dir)
@@ -141,7 +243,7 @@ server <- function(input, output, session) {
     file_path <- file.path(data_dir, paste0(input$ticker, ".csv"))
 
     validate(
-      need(file.exists(file_path), "Le fichier local du ticker sélectionné est introuvable.")
+      need(file.exists(file_path), "Le fichier local associé au ticker sélectionné est introuvable.")
     )
 
     tryCatch(
@@ -157,8 +259,8 @@ server <- function(input, output, session) {
     filtered <- filter_analysis_period(data, input$start_year)
 
     validate(
-      need(nrow(filtered) >= 3, "La période sélectionnée contient trop peu d'observations."),
-      need(any(filtered$Close > 0), "Les prix doivent être strictement positifs pour l'analyse.")
+      need(nrow(filtered) >= 3, "La période retenue contient trop peu d'observations pour produire une analyse fiable."),
+      need(any(filtered$Close > 0), "Les prix de clôture doivent être strictement positifs.")
     )
 
     filtered
@@ -177,52 +279,113 @@ server <- function(input, output, session) {
     )
   })
 
+  output$analysis_context <- renderUI({
+    data <- analysis_data()
+    div(
+      class = "context-banner",
+      div(
+        class = "context-main",
+        div(class = "context-ticker", input$ticker),
+        div(
+          class = "context-period",
+          paste0(
+            "Période analysée : ",
+            format(min(data$Date), "%d/%m/%Y"),
+            " au ",
+            format(max(data$Date), "%d/%m/%Y"),
+            " • ",
+            nrow(data),
+            " observations"
+          )
+        )
+      )
+    )
+  })
+
   output$basic_indicators <- renderUI({
     indicators <- basic_indicators()
 
     fluidRow(
       column(
-        width = 3,
-        div("Dernier prix"),
-        div(class = "metric-value", if (is.na(indicators$last_price)) "NA" else format(indicators$last_price, nsmall = 2, digits = 6, decimal.mark = ",")),
-        div(class = "small-note", "Clôture la plus récente")
+        width = 6,
+        metric_card(
+          "Dernier prix",
+          format_price(indicators$last_price),
+          "Dernière clôture disponible sur la période étudiée.",
+          accent = "navy"
+        )
       ),
       column(
-        width = 3,
-        div("Dernière mise à jour"),
-        div(class = "metric-value", if (is.na(indicators$last_update)) "NA" else format(indicators$last_update, "%Y-%m-%d")),
-        div(class = "small-note", "Date la plus récente disponible")
+        width = 6,
+        metric_card(
+          "Dernière mise à jour",
+          format_date_fr(indicators$last_update),
+          "Date la plus récente présente dans les données locales.",
+          accent = "slate"
+        )
       ),
       column(
-        width = 3,
-        div("Volatilité"),
-        div(class = "metric-value", if (is.na(indicators$volatility)) "NA" else format_percentage(indicators$volatility)),
-        div(class = "small-note", "Écart-type des rendements simples")
+        width = 6,
+        metric_card(
+          "Volatilité",
+          format_percentage(indicators$volatility),
+          "Écart-type des rendements journaliers simples.",
+          accent = "gold"
+        )
       ),
       column(
-        width = 3,
-        div("CAGR"),
-        div(class = "metric-value", if (is.na(indicators$cagr)) "NA" else format_percentage(indicators$cagr)),
-        div(class = "small-note", "Taux de croissance annualisé")
+        width = 6,
+        metric_card(
+          "CAGR",
+          format_percentage(indicators$cagr),
+          "Taux de croissance annualisé sur la période sélectionnée.",
+          accent = "green"
+        )
       )
     )
   })
 
   output$performance_table <- renderDT({
-    perf <- compute_performance_table(analysis_data()) |>
+    perf_raw <- compute_performance_table(analysis_data())
+
+    perf_display <- perf_raw |>
       dplyr::mutate(
-        `Date de référence` = ifelse(is.na(ReferencePrice), NA_character_, format(ReferenceDate, "%Y-%m-%d")),
-        `Prix de référence` = ifelse(is.na(ReferencePrice), NA_character_, format_number(ReferencePrice, 2)),
-        Performance = ifelse(is.na(Performance), "Historique insuffisant", format_percentage(Performance))
+        `Date de référence` = dplyr::if_else(
+          is.na(ReferencePrice),
+          NA_character_,
+          format(ReferenceDate, "%d/%m/%Y")
+        ),
+        `Prix de référence` = format_price(ReferencePrice),
+        `Performance affichée` = dplyr::if_else(
+          is.na(Performance),
+          "Historique insuffisant",
+          format_percentage(Performance)
+        )
       ) |>
-      dplyr::select(Horizon, `Date de référence`, `Prix de référence`, Performance)
+      dplyr::select(Horizon, `Date de référence`, `Prix de référence`, `Performance affichée`, Performance)
 
     datatable(
-      perf,
+      perf_display,
       rownames = FALSE,
-      options = list(dom = "t", pageLength = 5),
-      caption = htmltools::tags$caption(style = "caption-side: top; text-align: left;", "Performances historiques demandées")
-    )
+      class = "compact stripe hover stan-table",
+      options = list(
+        dom = "t",
+        paging = FALSE,
+        searching = FALSE,
+        info = FALSE,
+        ordering = FALSE,
+        autoWidth = TRUE,
+        columnDefs = list(list(targets = 4, visible = FALSE))
+      ),
+      colnames = c("Horizon", "Date de référence", "Prix de référence", "Performance", "Performance brute"),
+      caption = table_caption("Performances du titre sur les horizons demandés")
+    ) |>
+      formatStyle(
+        "Performance affichée",
+        valueColumns = "Performance",
+        color = styleInterval(c(-1e-12, 1e-12), c("#B42318", "#6B7280", "#027A48")),
+        fontWeight = styleInterval(c(-1e-12, 1e-12), c("600", "500", "600"))
+      )
   })
 
   output$regression_table <- renderDT({
@@ -231,119 +394,168 @@ server <- function(input, output, session) {
     reg_table <- tibble::tibble(
       Indicateur = c(
         "Valeur théorique actuelle",
-        "Beta (pente)",
+        "Beta (pente journalière)",
         "Sigma des résidus",
         "Position actuelle en sigma",
         "Valeur théorique dans 1 an",
         "Valeur théorique dans 5 ans"
       ),
       Valeur = c(
-        format_number(reg$theoretical_current, 2),
+        format_price(reg$theoretical_current),
         format_number(reg$beta, 6),
         format_number(reg$sigma, 6),
         format_number(reg$current_position_sigma, 4),
-        format_number(reg$theoretical_1y, 2),
-        format_number(reg$theoretical_5y, 2)
+        format_price(reg$theoretical_1y),
+        format_price(reg$theoretical_5y)
       )
     )
 
     datatable(
       reg_table,
       rownames = FALSE,
-      options = list(dom = "t", pageLength = 6),
-      caption = htmltools::tags$caption(style = "caption-side: top; text-align: left;", "Indicateurs issus de la régression log-linéaire")
-    )
+      class = "compact stripe hover stan-table",
+      options = list(
+        dom = "t",
+        paging = FALSE,
+        searching = FALSE,
+        info = FALSE,
+        ordering = FALSE,
+        autoWidth = TRUE
+      ),
+      caption = table_caption("Lecture des paramètres de la régression log-linéaire")
+    ) |>
+      formatStyle(
+        "Valeur",
+        fontWeight = "600",
+        color = "#0F172A"
+      )
   })
 
   output$price_plot <- renderPlot({
     reg <- regression_result()
-    build_price_plot(reg, input$ticker)
-  })
+    data <- analysis_data()
+    build_price_plot(
+      regression_result = reg,
+      ticker = input$ticker,
+      start_date = min(data$Date),
+      end_date = max(data$Date)
+    )
+  }, res = 110)
 
   output$available_tickers_table <- renderDT({
     tickers <- list_local_tickers(data_dir)
     ticker_table <- tibble::tibble(
       Ticker = tickers,
-      Fichier = paste0(tickers, ".csv")
+      `Fichier local` = paste0(tickers, ".csv")
     )
 
     datatable(
       ticker_table,
       rownames = FALSE,
-      options = list(dom = "t", pageLength = 10)
+      class = "compact stripe hover stan-table",
+      options = list(
+        dom = "t",
+        paging = FALSE,
+        searching = FALSE,
+        info = FALSE,
+        ordering = FALSE,
+        autoWidth = TRUE
+      ),
+      caption = table_caption("Tickers actuellement disponibles dans la base locale")
     )
   })
 
-  output$data_message <- renderText({
-    data_message()
+  output$data_message <- renderUI({
+    message <- data_message()
+    div(
+      class = paste("status-message", paste0("status-", message$type)),
+      div(class = "status-title", message$title),
+      div(class = "status-text", message$text)
+    )
   })
 
   observeEvent(input$add_yahoo_ticker, {
     req(input$new_yahoo_ticker)
     ticker <- sanitize_ticker(input$new_yahoo_ticker)
 
-    message_text <- tryCatch({
+    tryCatch({
       result <- download_and_save_yahoo(ticker, data_dir = data_dir)
       refresh_counter(refresh_counter() + 1)
-      paste0(
-        "Succès : le ticker ", result$ticker, " a été téléchargé depuis Yahoo Finance et sauvegardé dans ",
-        result$path, ". Période récupérée : ", result$min_date, " à ", result$max_date,
-        " (", result$rows, " lignes)."
+      set_data_message(
+        type = "success",
+        title = "Ajout Yahoo Finance réussi",
+        text = paste0(
+          "Le ticker ", result$ticker, " a été téléchargé puis enregistré dans ", result$path,
+          ". Historique récupéré du ", format(result$min_date, "%d/%m/%Y"),
+          " au ", format(result$max_date, "%d/%m/%Y"),
+          " (", result$rows, " lignes)."
+        )
       )
     }, error = function(e) {
-      paste0(
-        "Erreur lors du téléchargement Yahoo Finance pour ", ticker, " : ",
-        conditionMessage(e),
-        ". Vérifiez le ticker ou réessayez plus tard."
+      set_data_message(
+        type = "error",
+        title = "Échec du téléchargement Yahoo Finance",
+        text = paste0(
+          "Impossible d'ajouter ", ticker, " : ",
+          conditionMessage(e),
+          ". Vérifiez le ticker saisi ou réessayez ultérieurement."
+        )
       )
     })
-
-    data_message(message_text)
   })
 
   observeEvent(input$update_ticker, {
     req(input$ticker)
 
-    message_text <- tryCatch({
+    tryCatch({
       result <- download_and_save_yahoo(input$ticker, data_dir = data_dir)
       refresh_counter(refresh_counter() + 1)
-      paste0(
-        "Mise à jour réussie pour ", result$ticker, ". Dernière date disponible : ",
-        result$max_date, ". Nombre de lignes : ", result$rows, "."
+      set_data_message(
+        type = "success",
+        title = "Mise à jour terminée",
+        text = paste0(
+          "Le ticker ", result$ticker, " a été actualisé avec succès. Dernière date disponible : ",
+          format(result$max_date, "%d/%m/%Y"),
+          ". Le fichier local contient désormais ", result$rows, " lignes."
+        )
       )
     }, error = function(e) {
-      paste0(
-        "Échec de la mise à jour pour ", input$ticker, " : ",
-        conditionMessage(e),
-        ". Les données locales existantes ont été conservées."
+      set_data_message(
+        type = "error",
+        title = "Mise à jour impossible",
+        text = paste0(
+          "Les données locales de ", input$ticker, " ont été conservées. Motif : ",
+          conditionMessage(e)
+        )
       )
     })
-
-    data_message(message_text)
   })
 
   observeEvent(input$add_csv_ticker, {
     req(input$csv_file)
 
-    message_text <- tryCatch({
+    tryCatch({
       result <- import_csv_file(
         file_path = input$csv_file$datapath,
         ticker = input$csv_ticker,
         data_dir = data_dir
       )
       refresh_counter(refresh_counter() + 1)
-      paste0(
-        "Import CSV réussi pour ", result$ticker, ". Fichier enregistré : ",
-        result$path, ". Nombre de lignes validées : ", result$rows, "."
+      set_data_message(
+        type = "success",
+        title = "Import CSV réussi",
+        text = paste0(
+          "Le ticker ", result$ticker, " a été importé avec succès dans ", result$path,
+          ". Nombre de lignes validées : ", result$rows, "."
+        )
       )
     }, error = function(e) {
-      paste0(
-        "Échec de l'import CSV : ",
-        conditionMessage(e)
+      set_data_message(
+        type = "error",
+        title = "Import CSV impossible",
+        text = conditionMessage(e)
       )
     })
-
-    data_message(message_text)
   })
 }
 
