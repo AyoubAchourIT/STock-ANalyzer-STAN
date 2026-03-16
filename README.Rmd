@@ -1,0 +1,323 @@
+---
+title: "STAN (STock ANalyser)"
+author: "Projet de Master 2 MAS / STD"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+```
+
+# Titre du projet
+
+**STAN (STock ANalyser)** est une application **Shiny** développée en **R** dans le cadre du cours de langage R du **Master 2 Mathématiques Appliquées Statistiques**.
+
+# Objectif de l’application
+
+L’objectif est de proposer une application simple, robuste et pédagogique permettant :
+
+- d’analyser un stock à partir de **données locales** stockées dans des fichiers CSV ;
+- de **mettre à jour** un ticker existant depuis **Yahoo Finance** ;
+- d’**ajouter un nouveau ticker** depuis Yahoo Finance ;
+- d’**importer un stock depuis un fichier CSV utilisateur** ;
+- de calculer des **indicateurs financiers élémentaires** et une **régression log-linéaire** sur le prix.
+
+L’application répond au cahier des charges du projet **STAN (STock ANalyser)**.
+
+# Analyse d’un stock à partir de données locales / Yahoo
+
+L’application repose sur une base locale située dans le dossier `data/`, avec un fichier CSV par ticker.
+
+Chaque fichier doit contenir au minimum :
+
+- une colonne `Date` au format `YYYY-MM-DD` ;
+- une colonne `Close` numérique strictement positive.
+
+Des colonnes supplémentaires peuvent être présentes :
+
+- `Open`
+- `High`
+- `Low`
+- `Volume`
+- `Adjusted`
+
+L’utilisateur peut ensuite :
+
+- sélectionner un ticker local dans l’interface ;
+- choisir une **année de début d’analyse** ;
+- afficher les indicateurs de base ;
+- étudier les performances sur différents horizons ;
+- visualiser un graphique en échelle logarithmique ;
+- enrichir la base locale depuis Yahoo Finance ou via import CSV.
+
+# Finance
+
+## Indicateurs calculés
+
+L’application calcule les éléments suivants.
+
+### 1. Dernier prix
+
+Le dernier prix correspond à la dernière valeur disponible de la colonne `Close`.
+
+### 2. Date de dernière mise à jour
+
+Il s’agit de la dernière date disponible dans les données locales du ticker sélectionné.
+
+### 3. Volatilité
+
+La volatilité est définie ici comme l’écart-type des **rendements journaliers simples** :
+
+\[
+r_t = \frac{P_t - P_{t-1}}{P_{t-1}} = \frac{P_t}{P_{t-1}} - 1
+\]
+
+La volatilité affichée vaut donc :
+
+\[
+\sigma_r = \mathrm{sd}(r_t)
+\]
+
+Ce choix est simple, lisible et conforme à un cadre pédagogique de niveau Master.
+
+### 4. CAGR
+
+Le **CAGR** (Compound Annual Growth Rate) est calculé selon la formule :
+
+\[
+\mathrm{CAGR} = \left(\frac{V_f}{V_i}\right)^{1/n} - 1
+\]
+
+où :
+
+- \(V_i\) est le premier prix de la période d’analyse ;
+- \(V_f\) est le dernier prix de la période d’analyse ;
+- \(n\) est la durée en années entre la première et la dernière date.
+
+### 5. Performances sur horizons fixes
+
+Les performances affichées sont :
+
+- 1 mois ;
+- 6 mois ;
+- 1 an ;
+- 3 ans ;
+- 5 ans.
+
+Pour chaque horizon, on calcule :
+
+\[
+\mathrm{Perf} = \frac{P_{\text{final}}}{P_{\text{référence}}} - 1
+\]
+
+où \(P_{\text{référence}}\) est le prix disponible le plus proche **antérieur ou égal** à la date cible.
+
+Si l’historique est insuffisant, la valeur n’est pas calculée.
+
+### 6. Régression linéaire sur le logarithme du prix
+
+Le modèle retenu est :
+
+\[
+\log(P_t) = a + b t + \varepsilon_t
+\]
+
+où :
+
+- \(P_t\) est le prix de clôture ;
+- \(t\) est le nombre de jours écoulés depuis la première date de la période d’analyse ;
+- \(a\) est l’ordonnée à l’origine ;
+- \(b\) est la pente de la régression ;
+- \(\varepsilon_t\) est le résidu.
+
+Les indicateurs dérivés sont :
+
+- **valeur théorique actuelle** : \(\exp(\hat{a} + \hat{b} t)\) à la dernière date ;
+- **beta** : pente \(\hat{b}\) du modèle ;
+- **sigma** : écart-type des résidus de \(\log(P_t)\) ;
+- **position en sigma** : résidu courant divisé par sigma ;
+- **valeur théorique dans 1 an** : projection à \(t + 365\) jours ;
+- **valeur théorique dans 5 ans** : projection à \(t + 5 \times 365\) jours.
+
+## Représentation graphique
+
+Le graphique affiche :
+
+- le prix observé ;
+- la courbe théorique issue de la régression ;
+- les bandes \(\pm \sigma\) ;
+- les bandes \(\pm 2\sigma\).
+
+L’axe des ordonnées est représenté en **échelle logarithmique**, ce qui permet une lecture cohérente sur des amplitudes de prix importantes.
+
+# Installation
+
+## Version de R
+
+Une version récente de R est recommandée, par exemple :
+
+- **R 4.2** ou supérieur ;
+- idéalement **R 4.3** ou supérieur.
+
+## Packages nécessaires
+
+L’application utilise principalement les packages suivants :
+
+- `shiny`
+- `quantmod`
+- `tidyverse`
+- `lubridate`
+- `ggplot2`
+- `readr`
+- `DT`
+- `scales`
+- `zoo`
+
+Commande d’installation :
+
+```r
+install.packages(c(
+  "shiny",
+  "quantmod",
+  "tidyverse",
+  "lubridate",
+  "ggplot2",
+  "readr",
+  "DT",
+  "scales",
+  "zoo"
+))
+```
+
+# Lancement
+
+## Comment exécuter l’application
+
+Depuis **RStudio**, ouvrir le dossier du projet puis lancer :
+
+```r
+shiny::runApp()
+```
+
+ou simplement ouvrir le fichier `app.R` et cliquer sur **Run App**.
+
+# Utilisation
+
+## Choix du ticker
+
+Dans la barre latérale, l’utilisateur choisit un ticker parmi les fichiers CSV disponibles dans le dossier `data/`.
+
+## Choix de la période d’analyse
+
+L’utilisateur fixe l’année de début d’analyse via un champ numérique.
+
+Les calculs et le graphique sont alors restreints aux données postérieures ou égales à cette année.
+
+## Lecture des indicateurs affichés
+
+L’interface est organisée en cinq panels logiques :
+
+- **Panel 1** : indicateurs de base ;
+- **Panel 2** : réglages ;
+- **Panel 3** : performances et régression ;
+- **Panel 4** : graphique ;
+- **Panel 5** : gestion de données.
+
+Les tableaux affichent :
+
+- les performances aux horizons demandés ;
+- les indicateurs de la régression log-linéaire ;
+- les tickers actuellement disponibles localement.
+
+# Import de données
+
+## Format attendu pour un CSV
+
+Le format minimal attendu est le suivant :
+
+- `Date` : date au format `YYYY-MM-DD` ;
+- `Close` : prix de clôture numérique strictement positif.
+
+Contraintes supplémentaires :
+
+- une ligne par date ;
+- pas de doublon de dates ;
+- données triables chronologiquement ;
+- au moins trois observations.
+
+## Exemple de fichier valide
+
+```csv
+Date,Close
+2025-01-02,184.52
+2025-01-03,186.10
+2025-01-06,185.74
+2025-01-07,188.35
+```
+
+Le projet contient également plusieurs exemples dans le dossier `data/`.
+
+# Fonctionnalités disponibles
+
+## Mise à jour de la base locale
+
+Le bouton **Mettre à jour le ticker sélectionné** recharge l’historique depuis **Yahoo Finance** et remplace proprement le fichier local correspondant.
+
+## Ajout d’un stock en ligne
+
+Le champ **Nouveau ticker Yahoo** permet de saisir un ticker tel que :
+
+- `AAPL`
+- `MSFT`
+- `BNP.PA`
+
+Un clic sur le bouton d’ajout télécharge les données historiques et crée le fichier `data/TICKER.csv`.
+
+## Ajout via CSV
+
+L’utilisateur peut importer un fichier CSV depuis son ordinateur.
+
+Le fichier est validé avant sauvegarde. En cas d’erreur, un message explicite s’affiche dans l’application.
+
+# Structure du projet
+
+L’arborescence proposée est la suivante :
+
+```text
+stock-analyzer/
+├── app.R
+├── README.Rmd
+├── R/
+│   ├── utils_data.R
+│   └── utils_finance.R
+└── data/
+    ├── AAPL.csv
+    ├── MSFT.csv
+    └── BNP.PA.csv
+```
+
+# Remarques / limites éventuelles
+
+- Les téléchargements Yahoo Finance dépendent de la disponibilité du service et de la connexion réseau.
+- Les fichiers d’exemple fournis dans `data/` sont volontairement simples et servent surtout à tester immédiatement l’application.
+- Les horizons 3 ans ou 5 ans peuvent être indisponibles si l’historique local est trop court.
+- La variable temporelle de la régression est définie en **nombre de jours écoulés** depuis le début de la période d’analyse.
+- La projection à 1 an et 5 ans repose sur l’hypothèse d’une tendance log-linéaire stable, ce qui constitue une approximation.
+
+# Emplacements réservés pour des captures d’écran
+
+## Capture de l’interface principale
+
+À insérer lors du rendu final.
+
+## Capture du graphique de régression
+
+À insérer lors du rendu final.
+
+## Capture d’un import CSV réussi
+
+À insérer lors du rendu final.
