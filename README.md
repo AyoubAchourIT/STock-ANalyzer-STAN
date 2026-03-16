@@ -1,7 +1,5 @@
 # STAN (STock ANalyser)
 
-Projet Shiny en R realise dans le cadre du Master 2 MAS / STD, pour le cours de langage R.
-
 STAN est une application d'analyse boursiere qui permet de travailler sur des donnees locales, des historiques recuperes depuis Yahoo Finance, ou des donnees importees par l'utilisateur au format CSV.
 
 ## Contexte academique
