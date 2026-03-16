@@ -1,26 +1,26 @@
 # STAN (STock ANalyser)
 
-STAN est une application d'analyse boursiere qui permet de travailler sur des donnees locales, des historiques recuperes depuis Yahoo Finance, ou des donnees importees par l'utilisateur au format CSV.
+STAN est une application d'analyse boursière qui permet de travailler sur des données locales, des historiques récupérés depuis Yahoo Finance, ou des données importées par l'utilisateur au format CSV.
 
-## Contexte academique
+## Contexte académique
 
-Ce projet a ete developpe dans un cadre universitaire avec un objectif double :
+Ce projet a été développé dans un cadre universitaire avec un objectif double :
 
 - mettre en pratique la structuration d'un projet R propre et reproductible ;
-- proposer une application Shiny simple, robuste et pedagogique pour l'analyse d'un stock.
+- proposer une application Shiny simple, robuste et pédagogique pour l'analyse d'un stock.
 
 ## Description du projet
 
-L'application permet d'explorer un ticker boursier a partir d'une base locale de fichiers CSV, de calculer plusieurs indicateurs financiers usuels, d'ajuster une regression log-lineaire sur le prix et de visualiser les resultats dans une interface Shiny claire et sobre.
+L'application permet d'explorer un ticker boursier à partir d'une base locale de fichiers CSV, de calculer plusieurs indicateurs financiers usuels, d'ajuster une régression log-linéaire sur le prix et de visualiser les résultats dans une interface Shiny claire et sobre.
 
-## Fonctionnalites principales
+## Fonctionnalités principales
 
-- selection d'un ticker disponible localement ;
-- choix d'une annee de debut pour la periode d'analyse ;
+- sélection d'un ticker disponible localement ;
+- choix d'une année de début pour la période d'analyse ;
 - affichage des indicateurs de base :
   - dernier prix ;
-  - date de derniere mise a jour ;
-  - volatilite des rendements journaliers ;
+  - date de dernière mise à jour ;
+  - volatilité des rendements journaliers ;
   - CAGR ;
 - calcul des performances sur plusieurs horizons :
   - 1 mois ;
@@ -28,20 +28,20 @@ L'application permet d'explorer un ticker boursier a partir d'une base locale de
   - 1 an ;
   - 3 ans ;
   - 5 ans ;
-- regression lineaire sur le logarithme du prix :
-  - valeur theorique actuelle ;
+- régression linéaire sur le logarithme du prix :
+  - valeur théorique actuelle ;
   - beta ;
-  - sigma des residus ;
+  - sigma des résidus ;
   - position actuelle en sigma ;
-  - projection theorique a 1 an et 5 ans ;
-- graphique en echelle logarithmique avec :
-  - prix observe ;
-  - droite de regression ;
+  - projection théorique à 1 an et 5 ans ;
+- graphique en échelle logarithmique avec :
+  - prix observé ;
+  - droite de régression ;
   - bandes ±1 sigma ;
   - bandes ±2 sigma ;
-- mise a jour d'un ticker via Yahoo Finance ;
+- mise à jour d'un ticker via Yahoo Finance ;
 - ajout d'un nouveau ticker depuis Yahoo Finance ;
-- import d'un ticker a partir d'un fichier CSV utilisateur.
+- import d'un ticker à partir d'un fichier CSV utilisateur.
 
 ## Structure du projet
 
@@ -62,17 +62,17 @@ stock-analyzer/
 
 ## Lancer l'application
 
-Depuis RStudio, ouvrir le dossier du projet puis executer :
+Depuis RStudio, ouvrir le dossier du projet puis exécuter :
 
 ```r
 shiny::runApp()
 ```
 
-Le point d'entree principal de l'application est le fichier `app.R`.
+Le point d'entrée principal de l'application est le fichier `app.R`.
 
 ## Packages requis
 
-Les principaux packages utilises sont :
+Les principaux packages utilisés sont :
 
 - `shiny`
 - `quantmod`
@@ -109,11 +109,11 @@ La base locale repose sur un fichier CSV par ticker dans le dossier `data/`.
 Format minimal attendu :
 
 - colonne `Date` au format `YYYY-MM-DD` ;
-- colonne `Close` numerique strictement positive ;
+- colonne `Close` numérique strictement positive ;
 - une ligne par date ;
-- aucune date dupliquee.
+- aucune date dupliquée.
 
-Colonnes complementaires acceptees si elles sont disponibles :
+Colonnes complémentaires acceptées si elles sont disponibles :
 
 - `Open`
 - `High`
@@ -133,8 +133,8 @@ Date,Close
 
 Comportement de l'import CSV :
 
-- si un ticker est saisi dans l'interface, il est utilise ;
-- sinon, le nom du fichier CSV est utilise automatiquement comme ticker.
+- si un ticker est saisi dans l'interface, il est utilisé ;
+- sinon, le nom du fichier CSV est utilisé automatiquement comme ticker.
 
 ## Captures de l'application
 
@@ -144,21 +144,21 @@ Comportement de l'import CSV :
 
 ### Graphique d'analyse
 
-![Graphique du stock avec regression log-lineaire et bandes de sigma](images/graphique.png)
+![Graphique du stock avec régression log-linéaire et bandes de sigma](images/graphique.png)
 
-### Base locale et gestion des donnees
+### Base locale et gestion des données
 
-![Gestion de la base locale et operations d'import](images/base_locale.png)
+![Gestion de la base locale et opérations d'import](images/base_locale.png)
 
 ## Remarques et limites
 
-- les telechargements Yahoo Finance dependent de la disponibilite du service et de la connexion reseau ;
-- certains horizons de performance peuvent etre indisponibles si l'historique local est trop court ;
-- les projections issues de la regression log-lineaire restent indicatives et ne constituent pas une prevision financiere certaine ;
-- l'application est volontairement simple afin de rester lisible, maintenable et adaptee a un projet universitaire.
+- les téléchargements Yahoo Finance dépendent de la disponibilité du service et de la connexion réseau ;
+- certains horizons de performance peuvent être indisponibles si l'historique local est trop court ;
+- les projections issues de la régression log-linéaire restent indicatives et ne constituent pas une prévision financière certaine ;
+- l'application est volontairement simple afin de rester lisible, maintenable et adaptée à un projet universitaire.
 
 ## Fichiers de documentation
 
-- `README.md` : presentation du projet pour GitHub ;
-- `README.Rmd` : version detaillee au format R Markdown ;
-- `README.html` : version HTML generee a partir du `README.Rmd`.
+- `README.md` : présentation du projet pour GitHub ;
+- `README.Rmd` : version détaillée au format R Markdown ;
+- `README.html` : version HTML générée à partir du `README.Rmd`.
