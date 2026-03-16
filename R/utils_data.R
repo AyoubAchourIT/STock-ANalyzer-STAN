@@ -1,15 +1,25 @@
+## -------------------------------------------------------------------------
+## utils_data.R
+## Fonctions utilitaires pour :
+## - gérer la base locale CSV
+## - valider le format des données boursières
+## - importer des données depuis Yahoo Finance ou un fichier utilisateur
+## -------------------------------------------------------------------------
+
 ensure_data_dir <- function(data_dir = "data") {
   if (!dir.exists(data_dir)) {
     dir.create(data_dir, recursive = TRUE, showWarnings = FALSE)
   }
 }
 
+# Normalise le nom d'un ticker pour produire un nom de fichier propre.
 sanitize_ticker <- function(ticker) {
   ticker <- trimws(toupper(ticker))
   ticker <- gsub("[^A-Z0-9._-]", "_", ticker)
   ticker
 }
 
+# Liste les tickers actuellement disponibles dans la base locale.
 list_local_tickers <- function(data_dir = "data") {
   ensure_data_dir(data_dir)
   files <- list.files(data_dir, pattern = "\\.csv$", full.names = FALSE)
@@ -17,6 +27,7 @@ list_local_tickers <- function(data_dir = "data") {
   sort(unique(tickers))
 }
 
+# Uniformise les noms de colonnes attendus, indépendamment de la casse.
 standardize_stock_columns <- function(data) {
   names(data) <- trimws(names(data))
 
@@ -32,6 +43,47 @@ standardize_stock_columns <- function(data) {
   data
 }
 
+# Lit un CSV en capturant les erreurs de lecture avec un message explicite.
+read_csv_safely <- function(file_path) {
+  tryCatch(
+    readr::read_csv(file_path, show_col_types = FALSE),
+    error = function(e) {
+      stop(
+        paste0(
+          "Impossible de lire le fichier CSV : ",
+          basename(file_path),
+          ". Détail : ",
+          conditionMessage(e)
+        ),
+        call. = FALSE
+      )
+    }
+  )
+}
+
+# Déduit le ticker à partir du nom du fichier si aucun ticker valide n'est fourni.
+infer_ticker_from_file <- function(file_path, ticker = NULL) {
+  if (is.null(ticker) || !nzchar(trimws(ticker)) || trimws(ticker) == "0") {
+    return(tools::file_path_sans_ext(basename(file_path)))
+  }
+
+  ticker
+}
+
+# Convertit les colonnes numériques optionnelles lorsqu'elles sont présentes.
+coerce_optional_numeric_columns <- function(data) {
+  optional_numeric_cols <- c("Open", "High", "Low", "Volume", "Adjusted")
+
+  for (col_name in optional_numeric_cols) {
+    if (col_name %in% names(data)) {
+      data[[col_name]] <- suppressWarnings(as.numeric(data[[col_name]]))
+    }
+  }
+
+  data
+}
+
+# Vérifie qu'un jeu de données respecte le format minimal attendu par STAN.
 validate_stock_data <- function(data) {
   data <- standardize_stock_columns(data)
 
@@ -56,21 +108,7 @@ validate_stock_data <- function(data) {
     Close = suppressWarnings(as.numeric(Close))
   )
 
-  if ("Open" %in% names(data)) {
-    data$Open <- suppressWarnings(as.numeric(data$Open))
-  }
-  if ("High" %in% names(data)) {
-    data$High <- suppressWarnings(as.numeric(data$High))
-  }
-  if ("Low" %in% names(data)) {
-    data$Low <- suppressWarnings(as.numeric(data$Low))
-  }
-  if ("Volume" %in% names(data)) {
-    data$Volume <- suppressWarnings(as.numeric(data$Volume))
-  }
-  if ("Adjusted" %in% names(data)) {
-    data$Adjusted <- suppressWarnings(as.numeric(data$Adjusted))
-  }
+  data <- coerce_optional_numeric_columns(data)
 
   if (any(is.na(data$Date))) {
     return(list(
@@ -123,8 +161,9 @@ validate_stock_data <- function(data) {
   )
 }
 
+# Lit puis valide un fichier de la base locale.
 read_stock_csv <- function(file_path) {
-  data <- readr::read_csv(file_path, show_col_types = FALSE)
+  data <- read_csv_safely(file_path)
   validation <- validate_stock_data(data)
   if (!validation$ok) {
     stop(validation$message, call. = FALSE)
@@ -132,6 +171,7 @@ read_stock_csv <- function(file_path) {
   validation$data
 }
 
+# Sauvegarde un ticker validé dans le dossier data/.
 save_stock_data <- function(data, ticker, data_dir = "data") {
   ensure_data_dir(data_dir)
   ticker <- sanitize_ticker(ticker)
@@ -140,16 +180,15 @@ save_stock_data <- function(data, ticker, data_dir = "data") {
   output_path
 }
 
+# Importe un CSV utilisateur, le valide et l'enregistre dans la base locale.
 import_csv_file <- function(file_path, ticker = NULL, data_dir = "data") {
-  raw_data <- readr::read_csv(file_path, show_col_types = FALSE)
+  raw_data <- read_csv_safely(file_path)
   validation <- validate_stock_data(raw_data)
   if (!validation$ok) {
     stop(validation$message, call. = FALSE)
   }
 
-  if (is.null(ticker) || !nzchar(trimws(ticker))) {
-    ticker <- tools::file_path_sans_ext(basename(file_path))
-  }
+  ticker <- infer_ticker_from_file(file_path, ticker)
 
   output_path <- save_stock_data(validation$data, ticker, data_dir = data_dir)
   list(
@@ -159,6 +198,7 @@ import_csv_file <- function(file_path, ticker = NULL, data_dir = "data") {
   )
 }
 
+# Télécharge l'historique d'un ticker depuis Yahoo Finance et le convertit en tibble.
 fetch_yahoo_data <- function(ticker, from = as.Date("2000-01-01")) {
   clean_ticker <- sanitize_ticker(ticker)
 
@@ -190,6 +230,7 @@ fetch_yahoo_data <- function(ticker, from = as.Date("2000-01-01")) {
   validation$data
 }
 
+# Télécharge puis enregistre un ticker Yahoo dans la base locale.
 download_and_save_yahoo <- function(ticker, data_dir = "data") {
   data <- fetch_yahoo_data(ticker)
   path <- save_stock_data(data, ticker, data_dir = data_dir)

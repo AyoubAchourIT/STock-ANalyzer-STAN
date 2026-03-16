@@ -6,15 +6,162 @@ output:
   html_document:
     toc: true
     toc_depth: 2
+    toc_float: true
+    df_print: paged
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
+<style>
+body {
+  font-family: "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  color: #213547;
+  line-height: 1.75;
+}
+
+.main-container {
+  max-width: 1080px;
+}
+
+h1.title {
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: #143b5d;
+  margin-bottom: 0.35rem;
+}
+
+.author, .date {
+  color: #5f6f7f;
+  font-size: 1rem;
+}
+
+h1, h2, h3 {
+  color: #143b5d;
+  font-weight: 700;
+}
+
+h1 {
+  margin-top: 2.4rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 2px solid #e7edf3;
+}
+
+h2 {
+  margin-top: 2rem;
+  margin-bottom: 0.8rem;
+}
+
+h3 {
+  margin-top: 1.4rem;
+  margin-bottom: 0.6rem;
+}
+
+p, li {
+  font-size: 1.03rem;
+}
+
+ul, ol {
+  margin-bottom: 1rem;
+}
+
+li {
+  margin-bottom: 0.32rem;
+}
+
+pre {
+  border: 1px solid #dbe4ec;
+  border-radius: 12px;
+  background: #f8fafc;
+  padding: 0.9rem 1rem;
+}
+
+code {
+  color: #9a3412;
+  background: #fff7ed;
+  border-radius: 6px;
+  padding: 0.12rem 0.35rem;
+}
+
+pre code {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+table {
+  width: 100%;
+  margin-bottom: 1.2rem;
+}
+
+table thead th {
+  background: #f4f7fb;
+  border-bottom: 2px solid #d6e0ea;
+}
+
+table th, table td {
+  padding: 0.65rem 0.75rem !important;
+}
+
+.lead-box {
+  margin: 1.2rem 0 2rem;
+  padding: 1rem 1.2rem;
+  border-left: 5px solid #1d4e89;
+  background: #f7fafc;
+  border-radius: 10px;
+}
+
+.shot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+  margin-top: 1rem;
+}
+
+.shot-card {
+  border: 1px solid #dbe4ec;
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 0.8rem;
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.05);
+}
+
+.shot-card img {
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  display: block;
+}
+
+.shot-card p {
+  margin: 0.7rem 0 0.1rem;
+  font-size: 0.97rem;
+  color: #556576;
+  text-align: center;
+}
+
+.tocify {
+  border-radius: 12px;
+  border: 1px solid #dbe4ec;
+}
+</style>
+
+<div class="lead-box">
+<strong>Résumé.</strong> STAN est une application Shiny en R dédiée à l’analyse d’actions à partir de données locales, de Yahoo Finance ou de fichiers CSV, avec indicateurs financiers, régression log-linéaire et gestion simple de la base locale.
+</div>
+
 # Titre du projet
 
 **STAN (STock ANalyser)** est une application **Shiny** développée en **R** dans le cadre du cours de langage R du **Master 2 Mathématiques Appliquées Statistiques**.
+
+# Contexte du projet
+
+Ce projet s’inscrit dans le cadre d’un rendu universitaire portant sur le développement d’une application en **R / Shiny**. L’objectif pédagogique est double :
+
+- mettre en pratique la structuration d’un projet R reproductible ;
+- proposer une application d’analyse financière simple, lisible et robuste.
 
 # Objectif de l’application
 
@@ -27,6 +174,18 @@ L’objectif est de proposer une application simple, robuste et pédagogique per
 - de calculer des **indicateurs financiers élémentaires** et une **régression log-linéaire** sur le prix.
 
 L’application répond au cahier des charges du projet **STAN (STock ANalyser)**.
+
+# Fonctionnalités
+
+L’application permet notamment :
+
+- l’analyse d’un ticker à partir de données locales ;
+- le calcul d’indicateurs de base et de performance ;
+- l’estimation d’une régression log-linéaire sur le prix ;
+- la visualisation graphique de la tendance et des bandes de sigma ;
+- la mise à jour d’un ticker existant depuis Yahoo Finance ;
+- l’ajout d’un nouveau ticker depuis Yahoo Finance ;
+- l’import de données utilisateur depuis un fichier CSV.
 
 # Analyse d’un stock à partir de données locales / Yahoo
 
@@ -53,6 +212,13 @@ L’utilisateur peut ensuite :
 - étudier les performances sur différents horizons ;
 - visualiser un graphique en échelle logarithmique ;
 - enrichir la base locale depuis Yahoo Finance ou via import CSV.
+
+# Sources de données
+
+Les données exploitées par l’application proviennent de deux sources principales :
+
+- la **base locale** du projet, stockée sous forme de fichiers CSV dans le dossier `data/` ;
+- **Yahoo Finance**, utilisé pour télécharger ou mettre à jour des historiques boursiers.
 
 # Finance
 
@@ -168,6 +334,7 @@ Une version récente de R est recommandée, par exemple :
 L’application utilise principalement les packages suivants :
 
 - `shiny`
+- `dplyr`
 - `quantmod`
 - `tidyverse`
 - `lubridate`
@@ -177,11 +344,12 @@ L’application utilise principalement les packages suivants :
 - `scales`
 - `zoo`
 
-Commande d’installation :
+Commande d’installation recommandée :
 
 ```r
 install.packages(c(
   "shiny",
+  "dplyr",
   "quantmod",
   "tidyverse",
   "lubridate",
@@ -192,6 +360,14 @@ install.packages(c(
   "zoo"
 ))
 ```
+
+Ces packages couvrent :
+
+- l’interface Shiny ;
+- le téléchargement depuis Yahoo Finance ;
+- la manipulation et la validation des données ;
+- les tableaux interactifs ;
+- la production du graphique d’analyse.
 
 # Lancement
 
@@ -204,6 +380,8 @@ shiny::runApp()
 ```
 
 ou simplement ouvrir le fichier `app.R` et cliquer sur **Run App**.
+
+Le point d’entrée du projet est donc le fichier `app.R`.
 
 # Utilisation
 
@@ -233,6 +411,12 @@ Les tableaux affichent :
 - les indicateurs de la régression log-linéaire ;
 - les tickers actuellement disponibles localement.
 
+De manière générale, l’utilisation suit trois étapes simples :
+
+- sélectionner un ticker local ;
+- choisir l’année de début d’analyse ;
+- consulter les indicateurs, le graphique et les informations de gestion de données.
+
 # Import de données
 
 ## Format attendu pour un CSV
@@ -249,6 +433,15 @@ Contraintes supplémentaires :
 - données triables chronologiquement ;
 - au moins trois observations.
 
+Lors de l’import :
+
+- si un ticker est renseigné dans le champ prévu dans l’application, ce ticker est utilisé ;
+- si ce champ est laissé vide, le ticker est automatiquement déduit du **nom du fichier CSV**.
+
+Exemple :
+
+- `TEST_STOCK.csv` importé sans ticker saisi donnera le ticker `TEST_STOCK`.
+
 ## Exemple de fichier valide
 
 ```csv
@@ -261,7 +454,7 @@ Date,Close
 
 Le projet contient également plusieurs exemples dans le dossier `data/`.
 
-# Fonctionnalités disponibles
+# Fonctionnalités détaillées
 
 ## Mise à jour de la base locale
 
@@ -283,6 +476,25 @@ L’utilisateur peut importer un fichier CSV depuis son ordinateur.
 
 Le fichier est validé avant sauvegarde. En cas d’erreur, un message explicite s’affiche dans l’application.
 
+Le comportement retenu est volontairement simple :
+
+- si le champ "Nom du ticker pour le CSV" est rempli, la valeur saisie est utilisée ;
+- sinon, l’application reprend automatiquement le nom du fichier importé.
+
+# Captures de l'application
+
+![](images/interface.png)
+
+*Interface principale*
+
+![](images/graphique.png)
+
+*Graphique et régression*
+
+![](images/base_locale.png)
+
+*Gestion de la base locale*
+
 # Structure du projet
 
 L’arborescence proposée est la suivante :
@@ -300,24 +512,22 @@ stock-analyzer/
     └── BNP.PA.csv
 ```
 
-# Remarques / limites éventuelles
+# Conception technique
+
+Le projet repose sur une architecture volontairement simple et lisible :
+
+- `app.R` contient l’interface Shiny et la logique serveur principale ;
+- `R/utils_data.R` regroupe les fonctions de lecture, validation, import et sauvegarde des données ;
+- `R/utils_finance.R` regroupe les calculs financiers, les fonctions de formatage et la construction du graphique ;
+- `www/style.css` centralise la présentation visuelle de l’application ;
+- `README.Rmd` documente l’installation, l’usage et les choix techniques.
+
+Cette organisation permet de conserver une application unique facile à lancer avec `shiny::runApp()`, tout en séparant clairement la logique métier des fonctions de support.
+
+# Limitations
 
 - Les téléchargements Yahoo Finance dépendent de la disponibilité du service et de la connexion réseau.
 - Les fichiers d’exemple fournis dans `data/` sont volontairement simples et servent surtout à tester immédiatement l’application.
 - Les horizons 3 ans ou 5 ans peuvent être indisponibles si l’historique local est trop court.
 - La variable temporelle de la régression est définie en **nombre de jours écoulés** depuis le début de la période d’analyse.
 - La projection à 1 an et 5 ans repose sur l’hypothèse d’une tendance log-linéaire stable, ce qui constitue une approximation.
-
-# Emplacements réservés pour des captures d’écran
-
-## Capture de l’interface principale
-
-À insérer lors du rendu final.
-
-## Capture du graphique de régression
-
-À insérer lors du rendu final.
-
-## Capture d’un import CSV réussi
-
-À insérer lors du rendu final.

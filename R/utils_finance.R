@@ -1,3 +1,13 @@
+## -------------------------------------------------------------------------
+## utils_finance.R
+## Fonctions utilitaires pour :
+## - filtrer une période d'analyse
+## - calculer les indicateurs financiers de base
+## - estimer la régression log-linéaire
+## - formater les sorties pour l'interface Shiny
+## -------------------------------------------------------------------------
+
+# Restreint les données à partir de l'année de début choisie.
 filter_analysis_period <- function(data, start_year) {
   if (is.null(data) || nrow(data) == 0) {
     return(data.frame())
@@ -10,6 +20,7 @@ filter_analysis_period <- function(data, start_year) {
   filtered
 }
 
+# Calcule les rendements simples entre deux clôtures consécutives.
 compute_daily_returns <- function(data) {
   if (nrow(data) < 2) {
     return(numeric())
@@ -20,6 +31,7 @@ compute_daily_returns <- function(data) {
   returns
 }
 
+# Calcule le taux de croissance annualisé sur la période retenue.
 compute_cagr <- function(data) {
   if (nrow(data) < 2) {
     return(NA_real_)
@@ -36,6 +48,7 @@ compute_cagr <- function(data) {
   (last_price / first_price)^(1 / years_span) - 1
 }
 
+# Récupère le dernier prix disponible avant une date cible.
 get_reference_price <- function(data, target_date) {
   subset <- data |>
     dplyr::filter(Date <= target_date) |>
@@ -48,6 +61,7 @@ get_reference_price <- function(data, target_date) {
   subset$Close[nrow(subset)]
 }
 
+# Construit le tableau des performances sur les horizons demandés.
 compute_performance_table <- function(data) {
   if (nrow(data) < 2) {
     return(tibble::tibble(Horizon = character(), Performance = numeric()))
@@ -76,6 +90,7 @@ compute_performance_table <- function(data) {
   )
 }
 
+# Estime la tendance log-linéaire et prépare les bandes de sigma pour le graphique.
 compute_log_regression <- function(data) {
   valid_data <- data |>
     dplyr::filter(!is.na(Close), Close > 0) |>
@@ -127,6 +142,7 @@ compute_log_regression <- function(data) {
   )
 }
 
+# Rassemble les indicateurs affichés dans le panel de synthèse.
 compute_basic_indicators <- function(data) {
   if (nrow(data) == 0) {
     return(list(
@@ -147,10 +163,12 @@ compute_basic_indicators <- function(data) {
   )
 }
 
+# Formate une valeur en pourcentage pour l'interface.
 format_percentage <- function(x) {
   ifelse(is.na(x), "NA", scales::percent(x, accuracy = 0.01, decimal.mark = ","))
 }
 
+# Formate un nombre avec séparateur de milliers et précision contrôlée.
 format_number <- function(x, digits = 2) {
   ifelse(
     is.na(x),
@@ -159,6 +177,7 @@ format_number <- function(x, digits = 2) {
   )
 }
 
+# Formate un prix selon les conventions d'affichage du projet.
 format_price <- function(x, digits = 2) {
   ifelse(
     is.na(x),
@@ -167,10 +186,12 @@ format_price <- function(x, digits = 2) {
   )
 }
 
+# Formate une date au format français.
 format_date_fr <- function(x) {
   ifelse(is.na(x), "NA", format(x, "%d/%m/%Y"))
 }
 
+# Produit le graphique final affiché dans le panel 4.
 build_price_plot <- function(regression_result, ticker, start_date = NULL, end_date = NULL) {
   plot_data <- regression_result$data
 
@@ -219,15 +240,16 @@ build_price_plot <- function(regression_result, ticker, start_date = NULL, end_d
     ggplot2::theme(
       legend.position = "bottom",
       legend.box = "horizontal",
-      legend.text = ggplot2::element_text(size = 10),
-      plot.title = ggplot2::element_text(face = "bold", size = 15, color = "#0F172A"),
-      plot.subtitle = ggplot2::element_text(size = 10.5, color = "#475467"),
-      axis.title = ggplot2::element_text(face = "bold", color = "#344054"),
-      axis.text = ggplot2::element_text(color = "#344054"),
+      legend.text = ggplot2::element_text(size = 10.4),
+      plot.title = ggplot2::element_text(face = "bold", size = 14.6, color = "#0F172A"),
+      plot.subtitle = ggplot2::element_text(size = 10.8, color = "#475467"),
+      axis.title = ggplot2::element_text(face = "bold", size = 11.2, color = "#344054"),
+      axis.text = ggplot2::element_text(size = 10.3, color = "#344054"),
       panel.grid.minor = ggplot2::element_blank(),
       panel.grid.major.x = ggplot2::element_blank(),
       panel.grid.major.y = ggplot2::element_line(color = "#E5E7EB", linewidth = 0.45),
       plot.background = ggplot2::element_rect(fill = "white", color = NA),
-      panel.background = ggplot2::element_rect(fill = "white", color = NA)
+      panel.background = ggplot2::element_rect(fill = "white", color = NA),
+      plot.margin = ggplot2::margin(10, 16, 8, 10)
     )
 }

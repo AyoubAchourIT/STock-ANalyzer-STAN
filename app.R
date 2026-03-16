@@ -1,3 +1,12 @@
+## -------------------------------------------------------------------------
+## app.R
+## Point d'entrée principal de l'application STAN.
+## Ce fichier :
+## - construit l'interface Shiny ;
+## - relie les entrées utilisateur aux données locales et Yahoo Finance ;
+## - délègue la validation et les calculs aux utilitaires du dossier R/.
+## -------------------------------------------------------------------------
+
 library(shiny)
 library(quantmod)
 library(tidyverse)
@@ -13,6 +22,7 @@ source("R/utils_finance.R")
 
 ensure_data_dir("data")
 
+# Carte de présentation d'un indicateur clé dans le panel 1.
 metric_card <- function(title, value, note, accent = "default") {
   div(
     class = paste("metric-card", paste0("metric-card-", accent)),
@@ -22,6 +32,7 @@ metric_card <- function(title, value, note, accent = "default") {
   )
 }
 
+# En-tête harmonisé des sections principales de l'interface.
 section_header <- function(panel_label, title, subtitle = NULL) {
   div(
     class = "section-header",
@@ -31,6 +42,7 @@ section_header <- function(panel_label, title, subtitle = NULL) {
   )
 }
 
+# Légende standard pour les tableaux DT.
 table_caption <- function(text) {
   htmltools::tags$caption(
     style = "caption-side: top; text-align: left;",
@@ -55,7 +67,8 @@ ui <- fluidPage(
         p(
           class = "app-subtitle",
           "Analyse de stocks, indicateurs financiers, régression log-linéaire et gestion de données locales."
-        )
+        ),
+        div(class = "app-signature", "by Ayoub ACHOUR")
       )
     ),
     sidebarLayout(
@@ -180,6 +193,8 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
   data_dir <- "data"
+
+  # Message d'état centralisé pour les opérations de gestion de données.
   data_message <- reactiveVal(list(
     type = "info",
     title = "Application prête",
@@ -191,6 +206,7 @@ server <- function(input, output, session) {
     data_message(list(type = type, title = title, text = text))
   }
 
+  # Recharge la liste des tickers disponibles dans le dossier data/.
   refresh_tickers <- function(selected = NULL) {
     tickers <- list_local_tickers(data_dir)
     if (length(tickers) == 0) {
@@ -205,11 +221,13 @@ server <- function(input, output, session) {
     updateSelectInput(session, "ticker", choices = tickers, selected = selected)
   }
 
+  # Rafraîchit automatiquement la liste après ajout, import ou mise à jour.
   observe({
     refresh_counter()
     refresh_tickers(isolate(input$ticker))
   })
 
+  # Ajuste dynamiquement la plage d'années selon les données disponibles.
   observeEvent(input$ticker, {
     req(input$ticker)
     file_path <- file.path(data_dir, paste0(input$ticker, ".csv"))
@@ -238,6 +256,7 @@ server <- function(input, output, session) {
     )
   }, ignoreNULL = FALSE)
 
+  # Lecture du fichier local correspondant au ticker sélectionné.
   stock_data <- reactive({
     req(input$ticker)
     file_path <- file.path(data_dir, paste0(input$ticker, ".csv"))
@@ -254,6 +273,7 @@ server <- function(input, output, session) {
     )
   })
 
+  # Données restreintes à la période choisie dans le panel de réglages.
   analysis_data <- reactive({
     data <- stock_data()
     filtered <- filter_analysis_period(data, input$start_year)
@@ -266,10 +286,12 @@ server <- function(input, output, session) {
     filtered
   })
 
+  # Calcul des indicateurs de synthèse du panel 1.
   basic_indicators <- reactive({
     compute_basic_indicators(analysis_data())
   })
 
+  # Régression log-linéaire utilisée dans les panels 3 et 4.
   regression_result <- reactive({
     tryCatch(
       compute_log_regression(analysis_data()),
@@ -476,10 +498,21 @@ server <- function(input, output, session) {
 
   observeEvent(input$add_yahoo_ticker, {
     req(input$new_yahoo_ticker)
+    req(nzchar(trimws(input$new_yahoo_ticker)))
     ticker <- sanitize_ticker(input$new_yahoo_ticker)
 
     tryCatch({
-      result <- download_and_save_yahoo(ticker, data_dir = data_dir)
+      result <- withProgress(
+        message = "Téléchargement Yahoo Finance",
+        detail = paste("Récupération de", ticker),
+        value = 0.2,
+        {
+          incProgress(0.5)
+          result <- download_and_save_yahoo(ticker, data_dir = data_dir)
+          incProgress(0.4)
+          result
+        }
+      )
       refresh_counter(refresh_counter() + 1)
       set_data_message(
         type = "success",
@@ -508,7 +541,17 @@ server <- function(input, output, session) {
     req(input$ticker)
 
     tryCatch({
-      result <- download_and_save_yahoo(input$ticker, data_dir = data_dir)
+      result <- withProgress(
+        message = "Mise à jour du ticker local",
+        detail = paste("Actualisation de", input$ticker),
+        value = 0.2,
+        {
+          incProgress(0.5)
+          result <- download_and_save_yahoo(input$ticker, data_dir = data_dir)
+          incProgress(0.4)
+          result
+        }
+      )
       refresh_counter(refresh_counter() + 1)
       set_data_message(
         type = "success",
@@ -533,12 +576,23 @@ server <- function(input, output, session) {
 
   observeEvent(input$add_csv_ticker, {
     req(input$csv_file)
+    req(!is.null(input$csv_file$datapath))
 
     tryCatch({
-      result <- import_csv_file(
-        file_path = input$csv_file$datapath,
-        ticker = input$csv_ticker,
-        data_dir = data_dir
+      result <- withProgress(
+        message = "Import du fichier CSV",
+        detail = "Validation et enregistrement des données",
+        value = 0.2,
+        {
+          incProgress(0.5)
+          result <- import_csv_file(
+            file_path = input$csv_file$datapath,
+            ticker = input$csv_ticker,
+            data_dir = data_dir
+          )
+          incProgress(0.4)
+          result
+        }
       )
       refresh_counter(refresh_counter() + 1)
       set_data_message(
